@@ -1,0 +1,39 @@
+version: 2.1
+
+jobs:
+  lint-app-frontend:
+    docker:
+      - image: circleci/node:14
+    steps:
+      - checkout
+  build-docker:
+    machine: true
+    steps:
+      - checkout
+      - run:
+          name: Build docker container
+          command: |
+            echo "------------------ Installing dependencies---------------------------"
+            sudo curl -LO https://nodejs.org/dist/v14.9.0/node-v14.9.0-linux-x64.tar.xz
+            sudo tar -xvf node-v14.9.0-linux-x64.tar.xz
+            sudo cp -r node-v14.9.0-linux-x64/{bin,include,lib,share} /usr/
+            node --version => v
+
+            echo "--------- The images - Building ------------"
+            
+            docker build -t todoapp-frontend .
+            docker tag todoapp-frontend 273543149/todoapp-frontend:latest
+
+            echo " ------- login in to hub--------"
+
+            docker login -u 273543149 -p $DOCKERHUB_PASSWORD
+
+            echo "-------------- Pushing images to dockerhub-------"
+            
+            docker push 273543149/todoapp-frontend:latest
+workflows:
+  default:
+    jobs:
+      - lint-app-frontend
+      - build-docker:
+          requires: [lint-app-frontend]
